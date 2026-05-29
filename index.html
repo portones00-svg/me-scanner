@@ -120,6 +120,14 @@ body{background:#f8fafc;font-family:'DM Sans',system-ui,sans-serif;max-width:480
     <div style="font-size:10px;color:#475569">Mean Reversion Scanner · Oliver Kell EMA 10/20</div>
     <div style="font-size:10px;color:#475569;margin-top:2px">© Magensat 2026 · <a href="https://magensat.cl" target="_blank">magensat.cl</a></div>
   </div>
+  <div id="magensat-footer" style="display:none;background:#1e3a5f;color:#fff;text-align:center;padding:24px 16px;margin-top:16px;border-radius:14px">
+    <div style="font-size:11px;color:#93c5fd;letter-spacing:2px;margin-bottom:6px;font-family:monospace">DESARROLLADO POR</div>
+    <a href="https://magensat.cl" target="_blank" style="font-size:20px;font-weight:800;color:#fff;text-decoration:none;letter-spacing:1px">MAGENSAT</a>
+    <div style="font-size:11px;color:#94a3b8;margin-top:4px">Tecnología e Innovación</div>
+    <div style="width:40px;height:1px;background:#334155;margin:12px auto"></div>
+    <div style="font-size:10px;color:#475569">Mean Reversion Scanner · Oliver Kell EMA 10/20</div>
+    <div style="font-size:10px;color:#475569;margin-top:2px">© Magensat 2026 · <a href="https://magensat.cl" target="_blank" style="color:#93c5fd">magensat.cl</a></div>
+  </div>
 </div>
 
 <div class="detail" id="detailView"></div>
@@ -185,6 +193,9 @@ async function runScan(){
 function renderCards(){
   const data=getSorted();
   document.getElementById('countLbl').textContent=data.length+' setups';
+  // Footer siempre visible
+  const footerEl = document.getElementById('magensat-footer');
+  if(footerEl) footerEl.style.display='block';
   if(!data.length){document.getElementById('cards').innerHTML='<div style="text-align:center;padding:40px 20px;color:#94a3b8"><div style="font-size:36px;margin-bottom:8px">🔍</div><div>Ninguna acción bajo EMA 10</div></div>';return;}
   document.getElementById('cards').innerHTML=data.map((s,i)=>{
     const rec=getRec(s);const im=s.marketcap==='micro'||s.price<5;
