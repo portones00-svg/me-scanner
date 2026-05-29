@@ -3,6 +3,7 @@ module.exports = async (req, res) => {
   res.setHeader('Content-Type', 'application/json');
   const sector = req.query.sector || 'sp500';
   const minDist = parseFloat(req.query.min_dist || '2');
+  const ANTHROPIC_API_KEY = process.env.ANTHROPIC_API_KEY;
   const SECTORS = {
     sp500: ["AAPL","MSFT","NVDA","AMZN","GOOGL","META","TSLA","JPM","V","UNH","XOM","LLY","JNJ","WMT","MA","PG","HD","MRK","AVGO","CVX","PEP","COST","ABBV","KO","ADBE","CRM","BAC","MCD","CSCO","PFE","ABT","NKE","ORCL","TXN","NEE","HON","IBM","AMGN","GE","QCOM","LOW","INTU","CAT","GS","MS","AXP","SYK","TJX","ADP","VRTX","ADI","REGN","ZTS","CI","SO","MO","EOG","SLB","NOC","ITW","CME","CL","USB","PNC","TGT","EMR","MCO","F","GM","WM","APD","NSC","HCA","ECL","DUK","WFC","C","DVN","MPC","VLO","OXY","NEM","SHW","PPG","NUE"],
     nasdaq: ["NFLX","PYPL","INTC","AMD","AMAT","KLAC","LRCX","MRVL","PANW","SNPS","CDNS","FTNT","TEAM","ZS","DDOG","CRWD","OKTA","MDB","NET","SNOW","ABNB","DASH","COIN","MELI","UBER","LYFT","SNAP","SPOT","BIDU","NIO","XPEV","RIVN","IONQ","RKLB","JOBY","WDAY","VEEV","HUBS","DXCM","LULU","SMCI","HOOD","PLTR","TTD","BILL","MNDY"],
@@ -62,6 +63,33 @@ module.exports = async (req, res) => {
       return {ticker,name:result.meta?.shortName||ticker,sector:label,price:Math.round(cur*100)/100,ema10:Math.round(e10*100)/100,ema20:Math.round(e20*100)/100,dist10:d10,dist20:d20,rsi,rel_vol:rv,change1d:c1,change5d:c5,score,marketcap,razon_baja,ai_analysis:null};
     } catch { return null; }
   }
+  async function aiAnalyze(stock) {
+    if (!ANTHROPIC_API_KEY) return null;
+    try {
+      const r = await fetch('https://api.anthropic.com/v1/messages', {
+        method:'POST',
+        headers:{'Content-Type':'application/json','x-api-key':ANTHROPIC_API_KEY,'anthropic-version':'2023-06-01'},
+        body: JSON.stringify({
+          model:'claude-haiku-4-5-20251001',
+          max_tokens:400,
+          messages:[{role:'user',content:`Analista trading Oliver Kell mean reversion.
+${stock.ticker} (${stock.name}) | ${stock.sector}
+Precio: $${stock.price} | EMA10: $${stock.ema10} (${Math.abs(stock.dist10)}% abajo) | EMA20: $${stock.ema20}
+RSI: ${stock.rsi} | Vol: ${stock.rel_vol}x | 1d: ${stock.change1d}% | 5d: ${stock.change5d}%
+Precio ${stock.price>=100?'3 dígitos ✓':'bajo $100'}
+
+Responde en español:
+**VEREDICTO:** [SETUP VÁLIDO ✅ / SETUP RIESGOSO ⚠️ / EVITAR ❌]
+**Por qué bajó:** [1-2 razones]
+**Institucionales:** [¿vuelven? 1 oración]
+**Entrada:** $[precio] + [señal]
+**Stop:** $[nivel] | **Target:** $${stock.ema10}`}]
+        })
+      });
+      const d = await r.json();
+      return d.content?.[0]?.text || null;
+    } catch { return null; }
+  }
   const results=[];
   for (let i=0; i<tickers.length; i+=5) {
     const batch=tickers.slice(i,i+5);
@@ -69,5 +97,12 @@ module.exports = async (req, res) => {
     br.forEach(r=>{if(r&&Math.abs(r.dist10)>=minDist)results.push(r);});
   }
   results.sort((a,b)=>b.score-a.score);
-  res.json({ok:true,sector:label,total_scanned:tickers.length,found:results.length,timestamp:new Date().toISOString(),data:results.slice(0,40)});
+  const top = results.slice(0,40);
+  // Análisis IA para top 5
+  if (ANTHROPIC_API_KEY) {
+    for (let i=0; i<Math.min(5,top.length); i++) {
+      top[i].ai_analysis = await aiAnalyze(top[i]);
+    }
+  }
+  res.json({ok:true,sector:label,total_scanned:tickers.length,found:results.length,timestamp:new Date().toISOString(),data:top});
 };
