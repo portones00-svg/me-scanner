@@ -4,6 +4,7 @@ module.exports = async (req, res) => {
   const sector = req.query.sector || 'sp500';
   const minDist = parseFloat(req.query.min_dist || '2');
   const ANTHROPIC_API_KEY = process.env.ANTHROPIC_API_KEY;
+  const NEWS_API_KEY = process.env.NEWS_API_KEY;
   const SECTORS = {
     sp500: ["AAPL","MSFT","NVDA","AMZN","GOOGL","META","TSLA","JPM","V","UNH","XOM","LLY","JNJ","WMT","MA","PG","HD","MRK","AVGO","CVX","PEP","COST","ABBV","KO","ADBE","CRM","BAC","MCD","CSCO","PFE","ABT","NKE","ORCL","TXN","NEE","HON","IBM","AMGN","GE","QCOM","LOW","INTU","CAT","GS","MS","AXP","SYK","TJX","ADP","VRTX","ADI","REGN","ZTS","CI","SO","MO","EOG","SLB","NOC","ITW","CME","CL","USB","PNC","TGT","EMR","MCO","F","GM","WM","APD","NSC","HCA","ECL","DUK","WFC","C","DVN","MPC","VLO","OXY","NEM","SHW","PPG","NUE"],
     nasdaq: ["NFLX","PYPL","INTC","AMD","AMAT","KLAC","LRCX","MRVL","PANW","SNPS","CDNS","FTNT","TEAM","ZS","DDOG","CRWD","OKTA","MDB","NET","SNOW","ABNB","DASH","COIN","MELI","UBER","LYFT","SNAP","SPOT","BIDU","NIO","XPEV","RIVN","IONQ","RKLB","JOBY","WDAY","VEEV","HUBS","DXCM","LULU","SMCI","HOOD","PLTR","TTD","BILL","MNDY"],
@@ -63,42 +64,58 @@ module.exports = async (req, res) => {
       return {ticker,name:result.meta?.shortName||ticker,sector:label,price:Math.round(cur*100)/100,ema10:Math.round(e10*100)/100,ema20:Math.round(e20*100)/100,dist10:d10,dist20:d20,rsi,rel_vol:rv,change1d:c1,change5d:c5,score,marketcap,razon_baja,ai_analysis:null};
     } catch { return null; }
   }
+  async function fetchNews(ticker, companyName) {
+    if (!NEWS_API_KEY) return 'Sin noticias disponibles.';
+    try {
+      const query = encodeURIComponent(`${ticker} OR "${companyName}"`);
+      const url = `https://newsapi.org/v2/everything?q=${query}&language=en&sortBy=publishedAt&pageSize=5&apiKey=${NEWS_API_KEY}`;
+      const r = await fetch(url);
+      const data = await r.json();
+      if (!data.articles || data.articles.length === 0) return 'Sin noticias recientes encontradas.';
+      return data.articles.slice(0,5).map(a =>
+        `- ${a.title} (${new Date(a.publishedAt).toLocaleDateString('es')})`
+      ).join('\n');
+    } catch { return 'No se pudieron obtener noticias.'; }
+  }
   async function aiAnalyze(stock) {
     if (!ANTHROPIC_API_KEY) return null;
     try {
+      const news = await fetchNews(stock.ticker, stock.name);
       const r = await fetch('https://api.anthropic.com/v1/messages', {
         method:'POST',
         headers:{'Content-Type':'application/json','x-api-key':ANTHROPIC_API_KEY,'anthropic-version':'2023-06-01'},
         body: JSON.stringify({
           model:'claude-haiku-4-5-20251001',
-          max_tokens:500,
-          messages:[{role:'user',content:`Eres un asesor de trading amigable. Analiza esta acción para un trader principiante usando el método de Oliver Kell (regresión a la media EMA 10/20).
+          max_tokens:600,
+          messages:[{role:'user',content:`Eres un asesor de trading amigable. Analiza esta acción para un trader usando el método de Oliver Kell (regresión a la media EMA 10/20).
 
 Acción: ${stock.ticker} - ${stock.name}
 Precio actual: $${stock.price}
 Está ${Math.abs(stock.dist10)}% por debajo de su promedio de 10 días
-RSI: ${stock.rsi} ${stock.rsi<30?'(muy sobrevendida, señal positiva)':''}
-Volumen: ${stock.rel_vol}x el promedio ${stock.rel_vol>1.5?'(volumen alto, cuidado)':'(volumen normal)'}
+RSI: ${stock.rsi} ${stock.rsi<30?'(muy sobrevendida)':''}
+Volumen: ${stock.rel_vol}x el promedio
 Caída hoy: ${stock.change1d}% | Caída 5 días: ${stock.change5d}%
-Precio en 3 dígitos: ${stock.price>=100?'Sí ✓':'No'}
 
-Escribe un análisis simple y conversacional en español, sin símbolos # ni ---. Usa este formato exacto:
+NOTICIAS RECIENTES DE LA WEB:
+${news}
+
+Escribe un análisis simple en español, sin símbolos # ni ---. Formato exacto:
 
 VEREDICTO: [ENTRAR ✅ / CUIDADO ⚠️ / EVITAR ❌]
 
 POR QUÉ BAJÓ:
-Explica en 2 oraciones simples por qué bajó la acción.
+Explica en 2 oraciones basándote en las noticias reales. Si hay earnings negativos, menciónalo.
 
 ¿VAN A VOLVER LOS GRANDES INVERSORES?
-Explica en 1-2 oraciones si los fondos de inversión tienen motivo para recomprar.
+1-2 oraciones. ¿La caída es técnica o fundamental?
 
 CÓMO ENTRAR:
-Precio de entrada sugerido y qué señal esperar antes de comprar.
+Precio sugerido y señal a esperar.
 
 STOP LOSS: $${Math.round(stock.price*0.95*100)/100} | OBJETIVO 1: $${stock.ema10} | OBJETIVO 2: $${stock.ema20}
 
-RESUMEN EN UNA LÍNEA:
-Una frase simple que resuma si vale la pena o no.`}]
+RESUMEN:
+Una frase que resuma si vale la pena o no.`}]
         })
       });
       const d = await r.json();
