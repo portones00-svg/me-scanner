@@ -1,0 +1,8 @@
+<!DOCTYPE html><html><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>MR Scanner</title></head>
+<body><script>
+const API = '/api/scan';
+document.body.innerHTML = '<h2 style="font-family:sans-serif;padding:20px">Mean Reversion Scanner cargando...</h2>';
+fetch(API+'?sector=sp500&min_dist=2').then(r=>r.json()).then(d=>{
+  document.body.innerHTML = '<pre style="font-family:monospace;padding:20px;font-size:13px">'+JSON.stringify(d,null,2)+'</pre>';
+}).catch(e=>{ document.body.innerHTML = '<p style="color:red;padding:20px">Error: '+e+'</p>'; });
+</script></body></html>
