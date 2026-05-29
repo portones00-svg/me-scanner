@@ -71,19 +71,34 @@ module.exports = async (req, res) => {
         headers:{'Content-Type':'application/json','x-api-key':ANTHROPIC_API_KEY,'anthropic-version':'2023-06-01'},
         body: JSON.stringify({
           model:'claude-haiku-4-5-20251001',
-          max_tokens:400,
-          messages:[{role:'user',content:`Analista trading Oliver Kell mean reversion.
-${stock.ticker} (${stock.name}) | ${stock.sector}
-Precio: $${stock.price} | EMA10: $${stock.ema10} (${Math.abs(stock.dist10)}% abajo) | EMA20: $${stock.ema20}
-RSI: ${stock.rsi} | Vol: ${stock.rel_vol}x | 1d: ${stock.change1d}% | 5d: ${stock.change5d}%
-Precio ${stock.price>=100?'3 dígitos ✓':'bajo $100'}
+          max_tokens:500,
+          messages:[{role:'user',content:`Eres un asesor de trading amigable. Analiza esta acción para un trader principiante usando el método de Oliver Kell (regresión a la media EMA 10/20).
 
-Responde en español:
-**VEREDICTO:** [SETUP VÁLIDO ✅ / SETUP RIESGOSO ⚠️ / EVITAR ❌]
-**Por qué bajó:** [1-2 razones]
-**Institucionales:** [¿vuelven? 1 oración]
-**Entrada:** $[precio] + [señal]
-**Stop:** $[nivel] | **Target:** $${stock.ema10}`}]
+Acción: ${stock.ticker} - ${stock.name}
+Precio actual: $${stock.price}
+Está ${Math.abs(stock.dist10)}% por debajo de su promedio de 10 días
+RSI: ${stock.rsi} ${stock.rsi<30?'(muy sobrevendida, señal positiva)':''}
+Volumen: ${stock.rel_vol}x el promedio ${stock.rel_vol>1.5?'(volumen alto, cuidado)':'(volumen normal)'}
+Caída hoy: ${stock.change1d}% | Caída 5 días: ${stock.change5d}%
+Precio en 3 dígitos: ${stock.price>=100?'Sí ✓':'No'}
+
+Escribe un análisis simple y conversacional en español, sin símbolos # ni ---. Usa este formato exacto:
+
+VEREDICTO: [ENTRAR ✅ / CUIDADO ⚠️ / EVITAR ❌]
+
+POR QUÉ BAJÓ:
+Explica en 2 oraciones simples por qué bajó la acción.
+
+¿VAN A VOLVER LOS GRANDES INVERSORES?
+Explica en 1-2 oraciones si los fondos de inversión tienen motivo para recomprar.
+
+CÓMO ENTRAR:
+Precio de entrada sugerido y qué señal esperar antes de comprar.
+
+STOP LOSS: $${Math.round(stock.price*0.95*100)/100} | OBJETIVO 1: $${stock.ema10} | OBJETIVO 2: $${stock.ema20}
+
+RESUMEN EN UNA LÍNEA:
+Una frase simple que resuma si vale la pena o no.`}]
         })
       });
       const d = await r.json();
@@ -98,7 +113,6 @@ Responde en español:
   }
   results.sort((a,b)=>b.score-a.score);
   const top = results.slice(0,40);
-  // Análisis IA para top 5
   if (ANTHROPIC_API_KEY) {
     for (let i=0; i<Math.min(5,top.length); i++) {
       top[i].ai_analysis = await aiAnalyze(top[i]);
