@@ -75,6 +75,9 @@ body{background:#f8fafc;font-family:'DM Sans',system-ui,sans-serif;max-width:480
           <button class="pill" id="sec-pharma" onclick="setSector('pharma')">Pharma</button>
           <button class="pill" id="sec-small" onclick="setSector('small')">Small Cap</button>
           <button class="pill" id="sec-etfs" onclick="setSector('etfs')">ETFs</button>
+          <button class="pill" id="sec-energy" onclick="setSector('energy')">Energy</button>
+          <button class="pill" id="sec-financials" onclick="setSector('financials')">Financials</button>
+          <button class="pill" id="sec-consumer" onclick="setSector('consumer')">Consumer</button>
         </div>
       </div>
       <div style="margin-bottom:14px">
@@ -156,7 +159,7 @@ function getRec(s){
 }
 function setSector(s){
   sector=s;
-  ['sp500','nasdaq','semis','pharma','small','etfs'].forEach(k=>document.getElementById('sec-'+k).className='pill'+(k===s?' on':''));
+  ['sp500','nasdaq','semis','pharma','small','etfs','energy','financials','consumer'].forEach(k=>document.getElementById('sec-'+k).className='pill'+(k===s?' on':''));
 }
 function sortBy(k){
   sort=k;
