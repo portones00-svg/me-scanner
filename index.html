@@ -1,279 +1,32 @@
-<!DOCTYPE html>
-<html lang="es">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="default">
-<meta name="apple-mobile-web-app-title" content="MR Scanner">
-<meta name="theme-color" content="#1e3a5f">
-<link rel="manifest" href="/manifest.json">
-<link rel="apple-touch-icon" href="/public/apple-touch-icon.png">
-<title>Mean Reversion Scanner</title>
-<style>
-@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&family=DM+Mono:wght@400;500;700&display=swap');
-*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
-body{background:#f8fafc;font-family:'DM Sans',system-ui,sans-serif;max-width:480px;margin:0 auto;min-height:100vh}
-::-webkit-scrollbar{display:none}
-.mono{font-family:'DM Mono',monospace}
-.pill{border:1px solid #e2e8f0;background:#fff;color:#64748b;font-size:13px;padding:8px 16px;border-radius:20px;cursor:pointer;font-weight:500;white-space:nowrap;font-family:'DM Sans',sans-serif}
-.pill.on{background:#1e3a5f;border-color:#1e3a5f;color:#fff}
-.srt{background:#f1f5f9;border:none;color:#64748b;font-size:13px;padding:8px 14px;border-radius:8px;cursor:pointer;font-weight:500;font-family:'DM Sans',sans-serif}
-.srt.on{background:#1e3a5f;color:#fff}
-.card{background:#fff;border:1px solid #e2e8f0;border-radius:14px;padding:16px;margin-bottom:10px;cursor:pointer;box-shadow:0 1px 3px rgba(0,0,0,.06);border-left-width:4px}
-.card:active{transform:scale(.985)}
-.stat-box{background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;padding:13px}
-.btn-scan{background:linear-gradient(135deg,#1e3a5f,#2563eb);border:none;color:#fff;font-family:'DM Sans',sans-serif;font-size:15px;font-weight:700;padding:15px;border-radius:12px;cursor:pointer;width:100%}
-.btn-scan:disabled{opacity:.5}
-.spinner{width:20px;height:20px;border:2px solid rgba(255,255,255,.3);border-top-color:#fff;border-radius:50%;animation:spin .7s linear infinite;display:inline-block;vertical-align:middle;margin-right:8px}
-@keyframes spin{to{transform:rotate(360deg)}}
-.detail{position:fixed;inset:0;background:#f8fafc;z-index:50;overflow-y:auto;display:none}
-.detail.open{display:block}
-.footer{background:#1e3a5f;color:#fff;text-align:center;padding:24px 16px;margin-top:32px}
-.footer a{color:#93c5fd;text-decoration:none;font-weight:600}
-.footer a:hover{color:#fff}
-</style>
-</head>
-<body>
-<div id="listView">
-  <div style="background:#1e3a5f;padding:14px 16px;text-align:center;font-size:13px;font-weight:700;color:#fff;letter-spacing:2px">⚡ MAGENSAT &nbsp;|&nbsp; <span style="font-weight:400;font-size:11px;color:#93c5fd">magensat.cl</span></div>
-  <div style="background:#fff;border-bottom:1px solid #e2e8f0;padding:16px 16px 12px;position:sticky;top:0;z-index:20">
-    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px">
-      <div style="display:flex;align-items:center;gap:10px">
-        <div style="width:36px;height:36px;border-radius:9px;background:#1e3a5f;display:flex;align-items:center;justify-content:center;font-size:18px">📈</div>
-        <div>
-          <div style="font-size:16px;font-weight:800;color:#0f172a">Mean Reversion</div>
-          <div style="font-size:11px;color:#94a3b8">Oliver Kell · EMA 10/20</div>
-        </div>
-      </div>
-      <div id="liveInd" style="display:flex;align-items:center;gap:5px">
-        <div style="width:7px;height:7px;border-radius:50%;background:#94a3b8"></div>
-        <span style="font-size:11px;color:#94a3b8">Sin datos</span>
-      </div>
-    </div>
-  </div>
-  <div style="background:#1e3a5f;padding:10px 16px;display:flex;align-items:center;justify-content:space-between">
-    <div style="font-size:10px;color:#93c5fd;letter-spacing:1px">DESARROLLADO POR <a href="https://magensat.cl" target="_blank" style="color:#fff;font-weight:800;text-decoration:none">MAGENSAT</a></div>
-    <a href="https://magensat.cl" target="_blank" style="font-size:10px;color:#475569;text-decoration:none">magensat.cl</a>
-  </div>
-  <div style="padding:14px 14px 20px">
-    <div style="background:#fff;border:1px solid #e2e8f0;border-radius:14px;padding:16px;margin-bottom:14px">
-      <div style="font-size:11px;color:#94a3b8;letter-spacing:1.5px;margin-bottom:12px;font-family:'DM Mono',monospace">CONFIGURAR SCAN</div>
-      <div style="margin-bottom:12px">
-        <div style="font-size:12px;color:#64748b;font-weight:600;margin-bottom:7px">SECTOR</div>
-        <div style="display:flex;gap:6px;flex-wrap:wrap">
-          <button class="pill on" id="sec-sp500" onclick="setSector('sp500')">S&P 500</button>
-          <button class="pill" id="sec-nasdaq" onclick="setSector('nasdaq')">Nasdaq</button>
-          <button class="pill" id="sec-semis" onclick="setSector('semis')">Semis</button>
-          <button class="pill" id="sec-pharma" onclick="setSector('pharma')">Pharma</button>
-          <button class="pill" id="sec-small" onclick="setSector('small')">Small Cap</button>
-          <button class="pill" id="sec-etfs" onclick="setSector('etfs')">ETFs</button>
-        </div>
-      </div>
-      <div style="margin-bottom:14px">
-        <div style="display:flex;justify-content:space-between;margin-bottom:6px">
-          <span style="font-size:12px;color:#64748b;font-weight:600">DIST. MÍNIMA BAJO EMA 10</span>
-          <span class="mono" style="font-size:13px;font-weight:700;color:#1e3a5f" id="distLabel">2%</span>
-        </div>
-        <input type="range" min="1" max="20" value="2" id="distSlider" oninput="document.getElementById('distLabel').textContent=this.value+'%'" style="width:100%;accent-color:#1e3a5f">
-      </div>
-      <button class="btn-scan" id="scanBtn" onclick="runScan()">▶ ESCANEAR MERCADO</button>
-      <div id="progWrap" style="display:none;margin-top:12px">
-        <div style="font-size:11px;color:#64748b;margin-bottom:6px" id="progTxt">Iniciando...</div>
-        <div style="background:#e2e8f0;border-radius:4px;height:6px;overflow:hidden">
-          <div id="progFill" style="background:linear-gradient(90deg,#1e3a5f,#2563eb);height:100%;border-radius:4px;transition:width .3s;width:0%"></div>
-        </div>
-      </div>
-    </div>
-    <div id="statsRow" style="display:none;margin-bottom:14px">
-      <div style="display:flex;gap:8px;overflow-x:auto;padding-bottom:4px">
-        <div style="background:#fff;border:1px solid #e2e8f0;border-radius:10px;padding:10px 14px;flex-shrink:0;text-align:center;min-width:85px">
-          <div style="font-size:9px;color:#94a3b8;letter-spacing:1px;margin-bottom:3px;font-family:'DM Mono',monospace">BAJO EMA 10</div>
-          <div class="mono" style="font-size:22px;font-weight:800;color:#2563eb" id="stFound">0</div>
-        </div>
-        <div style="background:#fff;border:1px solid #e2e8f0;border-radius:10px;padding:10px 14px;flex-shrink:0;text-align:center;min-width:85px">
-          <div style="font-size:9px;color:#94a3b8;letter-spacing:1px;margin-bottom:3px;font-family:'DM Mono',monospace">RSI &lt;30</div>
-          <div class="mono" style="font-size:22px;font-weight:800;color:#dc2626" id="stRsi">0</div>
-        </div>
-        <div style="background:#fff;border:1px solid #e2e8f0;border-radius:10px;padding:10px 14px;flex-shrink:0;text-align:center;min-width:85px">
-          <div style="font-size:9px;color:#94a3b8;letter-spacing:1px;margin-bottom:3px;font-family:'DM Mono',monospace">MICRO CAP</div>
-          <div class="mono" style="font-size:22px;font-weight:800;color:#7c3aed" id="stMicro">0</div>
-        </div>
-        <div style="background:#fff;border:1px solid #e2e8f0;border-radius:10px;padding:10px 14px;flex-shrink:0;text-align:center;min-width:85px">
-          <div style="font-size:9px;color:#94a3b8;letter-spacing:1px;margin-bottom:3px;font-family:'DM Mono',monospace">TOP SCORE</div>
-          <div class="mono" style="font-size:22px;font-weight:800;color:#d97706" id="stTop">-</div>
-        </div>
-      </div>
-      <div style="display:flex;gap:6px;margin-top:10px;align-items:center">
-        <span style="font-size:10px;color:#94a3b8;font-family:'DM Mono',monospace;flex-shrink:0">ORDENAR:</span>
-        <button class="srt on" id="s-score" onclick="sortBy('score')">Score</button>
-        <button class="srt" id="s-dist" onclick="sortBy('dist')">Dist EMA</button>
-        <button class="srt" id="s-rsi" onclick="sortBy('rsi')">RSI</button>
-        <span style="margin-left:auto;font-size:11px;color:#94a3b8" id="countLbl"></span>
-      </div>
-    </div>
-    <div id="cards"></div>
-  <div class="footer" style="margin-top:20px"><div style="font-size:12px;color:#93c5fd;letter-spacing:2px;margin-bottom:6px;font-family:DM Mono,monospace">DESARROLLADO POR</div><a href="https://magensat.cl" target="_blank" style="font-size:18px;font-weight:800;color:#fff;text-decoration:none;letter-spacing:1px">MAGENSAT</a><div style="font-size:11px;color:#94a3b8;margin-top:4px">Tecnología e Innovación</div><div style="width:40px;height:1px;background:#334155;margin:12px auto"></div><div style="font-size:10px;color:#475569">Mean Reversion Scanner - Oliver Kell EMA 10/20</div><div style="font-size:10px;color:#475569;margin-top:2px">© Magensat 2026 · <a href="https://magensat.cl" target="_blank" style="color:#93c5fd">magensat.cl</a></div></div>
-  </div>
+⚡ MAGENSAT  |  magensat.cl
+📈
+Mean Reversion
+Oliver Kell · EMA 10/20
 
-  <!-- FOOTER CORPORATIVO -->
-  <div class="footer">
-    <div style="font-size:12px;color:#93c5fd;letter-spacing:2px;margin-bottom:6px;font-family:'DM Mono',monospace">DESARROLLADO POR</div>
-    <a href="https://magensat.cl" target="_blank" style="font-size:18px;font-weight:800;color:#fff;text-decoration:none;letter-spacing:1px">MAGENSAT</a>
-    <div style="font-size:11px;color:#64748b;margin-top:4px">Tecnología & Innovación</div>
-    <div style="width:40px;height:1px;background:#334155;margin:12px auto"></div>
-    <div style="font-size:10px;color:#475569">Mean Reversion Scanner · Oliver Kell EMA 10/20</div>
-    <div style="font-size:10px;color:#475569;margin-top:2px">© Magensat 2026 · <a href="https://magensat.cl" target="_blank">magensat.cl</a></div>
-  </div>
-  <div id="magensat-footer" style="display:none;background:#1e3a5f;color:#fff;text-align:center;padding:24px 16px;margin-top:16px;border-radius:14px">
-    <div style="font-size:11px;color:#93c5fd;letter-spacing:2px;margin-bottom:6px;font-family:monospace">DESARROLLADO POR</div>
-    <a href="https://magensat.cl" target="_blank" style="font-size:20px;font-weight:800;color:#fff;text-decoration:none;letter-spacing:1px">MAGENSAT</a>
-    <div style="font-size:11px;color:#94a3b8;margin-top:4px">Tecnología e Innovación</div>
-    <div style="width:40px;height:1px;background:#334155;margin:12px auto"></div>
-    <div style="font-size:10px;color:#475569">Mean Reversion Scanner · Oliver Kell EMA 10/20</div>
-    <div style="font-size:10px;color:#475569;margin-top:2px">© Magensat 2026 · <a href="https://magensat.cl" target="_blank" style="color:#93c5fd">magensat.cl</a></div>
-  </div>
-</div>
+Sin datos
+DESARROLLADO POR MAGENSAT
+magensat.cl
+CONFIGURAR SCAN
+SECTOR
+S&P 500
+Nasdaq
+Semis
+Pharma
+Small Cap
+ETFs
+DIST. MÍNIMA BAJO EMA 10
+2%
+▶ ESCANEAR MERCADO
 
-<div class="detail" id="detailView"></div>
-<script>
-let sector='sp500', sort='score', results=[];
-const dc=d=>{const a=Math.abs(d);return a>=15?'#dc2626':a>=8?'#d97706':'#6b7280'};
-const sc=s=>s>=35?'#dc2626':s>=25?'#d97706':'#6b7280';
-function getRec(s){
-  const m=s.marketcap==='micro'||s.price<5;
-  const e=s.razon_baja==='malos_earnings'||(s.ai_analysis&&(s.ai_analysis.toLowerCase().includes('earnings')||s.ai_analysis.toLowerCase().includes('guidance')||s.ai_analysis.toLowerCase().includes('capitulación fundamental')));
-  if(m)return{tipo:'micro',icon:'⚡',titulo:'MICRO CAP — PRECAUCIÓN',color:'#7c3aed',bg:'#f5f3ff',border:'#a78bfa',accion:'Evaluar con cautela extrema',desc:'Baja liquidez, spreads amplios. Los institucionales NO participan. Máx 1-2% del portafolio.',puntos:['Spread bid/ask puede ser muy amplio','Los fondos grandes NO operan aquí','Stop loss ajustado y posición mínima','La EMA puede no tener validez estadística']};
-  if(e)return{tipo:'earnings',icon:'🚫',titulo:'MALOS EARNINGS — NO ENTRAR',color:'#b91c1c',bg:'#fef2f2',border:'#fca5a5',accion:'Esperar y observar',desc:'Caída por malos resultados. Los institucionales salen. La regresión puede tardar meses.',puntos:['Institucionales NO regresan hasta próximo earnings positivo','Alta probabilidad de nuevos mínimos','Esperá 2-3 semanas tras el earnings','La EMA anterior pierde referencia como target']};
-  return{tipo:'ingresar',icon:'✅',titulo:'TOMA DE GANANCIAS — SETUP VÁLIDO',color:'#15803d',bg:'#f0fdf4',border:'#86efac',accion:'Considerar entrada',desc:'Corrección técnica sin cambio en fundamentales. Institucionales tienen incentivo de recomprar.',puntos:['Buscá vela de reversión con volumen declinante','Stop Loss: 3-5% bajo el mínimo reciente','Confirmación: cierre por encima de la apertura','Esperá señal antes de entrar']};
-}
-function setSector(s){
-  sector=s;
-  ['sp500','nasdaq','semis','pharma','small','etfs'].forEach(k=>document.getElementById('sec-'+k).className='pill'+(k===s?' on':''));
-}
-function sortBy(k){
-  sort=k;
-  ['score','dist','rsi'].forEach(x=>document.getElementById('s-'+x).className='srt'+(x===k?' on':''));
-  renderCards();
-}
-function getSorted(){
-  return[...results].sort((a,b)=>{
-    if(sort==='score')return b.score-a.score;
-    if(sort==='dist')return Math.abs(b.dist10)-Math.abs(a.dist10);
-    if(sort==='rsi')return a.rsi-b.rsi;
-    return 0;
-  });
-}
-async function runScan(){
-  const btn=document.getElementById('scanBtn');
-  const pw=document.getElementById('progWrap');
-  const pf=document.getElementById('progFill');
-  const pt=document.getElementById('progTxt');
-  btn.disabled=true;
-  btn.innerHTML='<span class="spinner"></span>Escaneando...';
-  pw.style.display='block';
-  let pct=0;
-  const t=setInterval(()=>{pct=Math.min(pct+(pct<60?2:.5),92);pf.style.width=pct+'%';pt.textContent=`Analizando ${sector.toUpperCase()}... ${Math.round(pct)}%`;},400);
-  try{
-    const md=document.getElementById('distSlider').value;
-    const r=await fetch(`/api/scan?sector=${sector}&min_dist=${md}&limit=40`);
-    if(!r.ok)throw new Error('Error '+r.status);
-    const j=await r.json();
-    clearInterval(t);pf.style.width='100%';
-    pt.textContent=`✓ Listo — ${j.found} setups encontrados`;
-    results=j.data||[];
-    document.getElementById('statsRow').style.display='block';
-    document.getElementById('stFound').textContent=j.found;
-    document.getElementById('stRsi').textContent=results.filter(s=>s.rsi<30).length;
-    document.getElementById('stMicro').textContent=results.filter(s=>s.marketcap==='micro'||s.price<5).length;
-    document.getElementById('stTop').textContent=results[0]?.score||'-';
-    document.getElementById('liveInd').innerHTML='<div style="width:7px;height:7px;border-radius:50%;background:#22c55e;box-shadow:0 0 6px #22c55e88"></div><span style="font-size:11px;color:#64748b">'+new Date().toLocaleTimeString('es',{hour:'2-digit',minute:'2-digit'})+'</span>';
-    renderCards();
-  }catch(err){
-    clearInterval(t);pf.style.background='#ef4444';pf.style.width='100%';
-    pt.textContent='⚠ Error: '+err.message;
-  }
-  setTimeout(()=>{btn.disabled=false;btn.innerHTML='▶ ESCANEAR MERCADO';pw.style.display='none';pf.style.width='0%';pf.style.background='linear-gradient(90deg,#1e3a5f,#2563eb)';},2500);
-}
-function renderCards(){
-  const data=getSorted();
-  document.getElementById('countLbl').textContent=data.length+' setups';
-  // Footer siempre visible
-  const footerEl = document.getElementById('magensat-footer');
-  if(footerEl) footerEl.style.display='block';
-  if(!data.length){document.getElementById('cards').innerHTML='<div style="text-align:center;padding:40px 20px;color:#94a3b8"><div style="font-size:36px;margin-bottom:8px">🔍</div><div>Ninguna acción bajo EMA 10</div></div>';return;}
-  document.getElementById('cards').innerHTML=data.map((s,i)=>{
-    const rec=getRec(s);const im=s.marketcap==='micro'||s.price<5;
-    const da=Math.abs(s.dist10);const bw=Math.min(da*4,100);const bc=da>=15?'#dc2626':da>=8?'#d97706':'#94a3b8';
-    return`<div class="card" style="border-left-color:${rec.color}" onclick="openDetail(${i})">
-      <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:10px">
-        <div><div style="display:flex;align-items:center;gap:7px"><span class="mono" style="font-size:19px;font-weight:800;color:#0f172a">${s.ticker}</span>${im?'<span style="font-size:9px;background:#f5f3ff;color:#7c3aed;border:1px solid #a78bfa;border-radius:3px;padding:1px 5px;font-weight:700">MICRO</span>':''}</div><div style="font-size:11px;color:#94a3b8;margin-top:2px">${s.name}</div></div>
-        <div style="text-align:right"><div class="mono" style="font-size:17px;font-weight:700;color:#0f172a">$${s.price}</div><div class="mono" style="font-size:12px;color:${s.change1d<0?'#dc2626':'#16a34a'};font-weight:600">${s.change1d>0?'+':''}${s.change1d}%</div></div>
-      </div>
-      <div style="display:flex;gap:8px;margin-bottom:10px">
-        ${[['EMA 10',s.dist10+'%',dc(s.dist10)],['RSI',s.rsi,s.rsi<30?'#dc2626':'#64748b'],['VOL',s.rel_vol+'×',s.rel_vol>1.5?'#d97706':'#64748b'],['SCORE',s.score,sc(s.score)]].map(([l,v,c])=>`<div style="flex:1;background:#f8fafc;border-radius:8px;padding:8px;text-align:center"><div style="font-size:9px;color:#94a3b8;margin-bottom:2px">${l}</div><div class="mono" style="font-size:14px;font-weight:700;color:${c}">${v}</div></div>`).join('')}
-      </div>
-      <div style="margin-bottom:10px"><div style="display:flex;justify-content:space-between;margin-bottom:3px"><span style="font-size:9px;color:#94a3b8">DISTANCIA A EMA 10</span><span class="mono" style="font-size:9px;font-weight:700;color:${bc}">${da.toFixed(1)}% abajo</span></div><div style="background:#f1f5f9;border-radius:4px;height:5px;overflow:hidden"><div style="width:${bw}%;background:${bc};height:100%;border-radius:4px"></div></div></div>
-      <div style="display:flex;align-items:center;justify-content:space-between"><div style="display:flex;align-items:center;gap:6px;background:${rec.bg};border:1px solid ${rec.border};border-radius:20px;padding:5px 12px"><span style="font-size:14px">${rec.icon}</span><span style="font-size:11px;font-weight:700;color:${rec.color}">${rec.accion}</span></div><span style="font-size:12px;color:#94a3b8">Ver →</span></div>
-    </div>`;
-  }).join('');
-}
-function openDetail(i){
-  const s=getSorted()[i];const rec=getRec(s);const im=s.marketcap==='micro'||s.price<5;
-  const VS={'✅':{bg:'#f0fdf4',border:'#22c55e',color:'#15803d',label:'SETUP VÁLIDO'},'⚠️':{bg:'#fffbeb',border:'#f59e0b',color:'#b45309',label:'SETUP RIESGOSO'},'❌':{bg:'#fef2f2',border:'#ef4444',color:'#b91c1c',label:'EVITAR'}};
-  const v=s.ai_analysis?(s.ai_analysis.includes('✅')?'✅':s.ai_analysis.includes('⚠️')?'⚠️':s.ai_analysis.includes('❌')?'❌':null):null;
-  const vs=v?VS[v]:null;
-  const p10=Math.abs(((s.ema10-s.price)/s.price*100)).toFixed(1);
-  const p20=Math.abs(((s.ema20-s.price)/s.price*100)).toFixed(1);
-  const fmt=t=>t.replace(/\*\*(.*?)\*\*/g,'<strong style="color:#1e3a5f">$1</strong>').replace(/^- (.+)$/gm,'<div style="padding:6px 0 6px 14px;border-left:2px solid #e2e8f0;margin:4px 0;color:#374151;font-size:14px">$1</div>');
-  document.getElementById('detailView').innerHTML=`
-    <div style="position:sticky;top:0;background:#fff;border-bottom:1px solid #e2e8f0;padding:14px 16px;display:flex;align-items:center;gap:12px;z-index:10">
-      <button onclick="closeDetail()" style="background:#f1f5f9;border:none;border-radius:8px;width:38px;height:38px;font-size:20px;cursor:pointer;color:#475569;flex-shrink:0">←</button>
-      <div style="flex:1;min-width:0"><div class="mono" style="font-weight:800;font-size:18px;color:#0f172a">${s.ticker}</div><div style="font-size:11px;color:#94a3b8;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${s.name}</div></div>
-      <div style="text-align:right;flex-shrink:0"><div class="mono" style="font-weight:700;font-size:17px;color:#0f172a">$${s.price}</div><div class="mono" style="font-size:12px;color:${s.change1d<0?'#dc2626':'#16a34a'};font-weight:600">${s.change1d>0?'+':''}${s.change1d}% hoy</div></div>
-    </div>
-    <div style="padding:16px 16px 40px">
-      <div style="display:flex;align-items:center;gap:8px;margin-bottom:14px">
-        <span style="font-size:11px;background:#f1f5f9;color:#64748b;padding:4px 10px;border-radius:5px">${s.sector}</span>
-        ${im?'<span style="font-size:10px;background:#f5f3ff;color:#7c3aed;border:1px solid #a78bfa;padding:4px 10px;border-radius:5px;font-weight:700">⚡ MICRO CAP</span>':''}
-        <span class="mono" style="font-size:11px;color:${s.change5d<0?'#dc2626':'#16a34a'};font-weight:600;margin-left:auto">${s.change5d>0?'+':''}${s.change5d}% 5d</span>
-      </div>
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px">
-        ${[['DIST EMA 10',s.dist10+'%',dc(s.dist10),'Clave del setup'],['DIST EMA 20',s.dist20+'%','#64748b','Soporte secundario'],['RSI 14',s.rsi,s.rsi<30?'#dc2626':'#64748b',s.rsi<30?'Sobreventa 🔴':'Neutral'],['VOL RELATIVO',s.rel_vol+'×',s.rel_vol>1.5?'#d97706':'#64748b',s.rel_vol>1.5?'Vol. alto ⚠':'Normal']].map(([l,v,c,sub])=>`<div class="stat-box"><div style="font-size:9px;color:#94a3b8;letter-spacing:1px;margin-bottom:4px;font-family:'DM Mono',monospace">${l}</div><div class="mono" style="font-size:22px;font-weight:800;color:${c}">${v}</div><div style="font-size:10px;color:#94a3b8;margin-top:3px">${sub}</div></div>`).join('')}
-      </div>
-      <div style="background:#fff;border:1px solid #e2e8f0;border-radius:10px;padding:14px;margin-bottom:14px">
-        <div style="font-size:9px;color:#94a3b8;letter-spacing:1px;margin-bottom:10px;font-family:'DM Mono',monospace">NIVELES OBJETIVO</div>
-        <div style="display:flex">
-          <div style="flex:1;padding-right:12px;border-right:1px solid #f1f5f9"><div style="font-size:10px;color:#94a3b8;margin-bottom:4px">EMA 10 — Target 1</div><div class="mono" style="font-size:20px;font-weight:800;color:#2563eb">$${s.ema10}</div><div style="font-size:10px;color:#94a3b8;margin-top:3px">+${p10}% potencial</div></div>
-          <div style="flex:1;padding-left:12px"><div style="font-size:10px;color:#94a3b8;margin-bottom:4px">EMA 20 — Target 2</div><div class="mono" style="font-size:20px;font-weight:800;color:#64748b">$${s.ema20}</div><div style="font-size:10px;color:#94a3b8;margin-top:3px">+${p20}% potencial</div></div>
-        </div>
-      </div>
-      ${vs?`<div style="background:${vs.bg};border:1px solid ${vs.border};border-radius:10px;padding:12px 14px;margin-bottom:14px;display:flex;align-items:center;gap:10px"><span style="font-size:24px">${v}</span><span style="font-size:13px;font-weight:700;color:${vs.color}">${vs.label}</span></div>`:''}
-      ${s.ai_analysis?`<div style="background:#fff;border:1px solid #e2e8f0;border-radius:10px;padding:16px;margin-bottom:14px"><div style="font-size:9px;color:#94a3b8;letter-spacing:1px;margin-bottom:12px;font-family:'DM Mono',monospace">ANÁLISIS IA · CLAUDE SONNET</div><div style="font-size:14px;line-height:1.8;color:#374151">${fmt(s.ai_analysis)}</div></div>`:`<div style="background:#f8fafc;border:1px dashed #e2e8f0;border-radius:10px;padding:20px;margin-bottom:14px;text-align:center"><div style="font-size:28px;margin-bottom:6px">🤖</div><div style="font-size:13px;color:#64748b">Sin análisis IA</div></div>`}
-      <div style="background:${rec.bg};border:2px solid ${rec.border};border-radius:12px;overflow:hidden">
-        <div style="background:${rec.color};padding:14px 16px;display:flex;align-items:center;gap:10px"><span style="font-size:24px">${rec.icon}</span><div><div style="font-size:13px;font-weight:800;color:#fff">${rec.titulo}</div><div style="font-size:10px;color:rgba(255,255,255,.7)">RECOMENDACIÓN DEL SISTEMA</div></div></div>
-        <div style="padding:16px">
-          <div style="background:rgba(255,255,255,.7);border:1px solid ${rec.border};border-radius:7px;padding:10px 14px;margin-bottom:12px"><div style="font-size:10px;color:${rec.color};font-weight:700;letter-spacing:1px;margin-bottom:3px">ACCIÓN SUGERIDA</div><div style="font-size:14px;font-weight:700;color:${rec.color}">${rec.accion}</div></div>
-          <p style="font-size:13px;color:#374151;line-height:1.7;margin-bottom:12px">${rec.desc}</p>
-          ${rec.puntos.map(p=>`<div style="display:flex;gap:10px;align-items:flex-start;background:rgba(255,255,255,.6);border:1px solid ${rec.border};border-radius:8px;padding:10px 12px;margin-bottom:8px"><span style="color:${rec.color};font-weight:700;font-size:15px;flex-shrink:0">${rec.tipo==='ingresar'?'→':rec.tipo==='earnings'?'✗':'⚠'}</span><span style="font-size:13px;color:#374151;line-height:1.5">${p}</span></div>`).join('')}
-          <div style="margin-top:12px;padding-top:10px;border-top:1px solid ${rec.border};font-size:11px;color:${rec.color};font-weight:500">⚠ Recomendación orientativa. Aplicá siempre tu propio análisis.</div>
-        </div>
-      </div>
-      <div style="margin-top:20px;text-align:center;padding:16px;background:#f8fafc;border-radius:10px;border:1px solid #e2e8f0">
-        <div style="font-size:10px;color:#94a3b8;margin-bottom:4px">DESARROLLADO POR</div>
-        <a href="https://magensat.cl" target="_blank" style="font-size:14px;font-weight:800;color:#1e3a5f;text-decoration:none">MAGENSAT</a>
-        <div style="font-size:10px;color:#94a3b8;margin-top:2px">magensat.cl</div>
-      </div>
-    </div>`;
-  document.getElementById('detailView').classList.add('open');
-  document.getElementById('detailView').scrollTop=0;
-  document.getElementById('listView').style.display='none';
-}
-function closeDetail(){
-  document.getElementById('detailView').classList.remove('open');
-  document.getElementById('listView').style.display='block';
-}
-if('serviceWorker' in navigator)navigator.serviceWorker.register('/sw.js').catch(()=>{});
-</script>
-</body>
-</html>
+DESARROLLADO POR
+MAGENSAT
+Tecnología e Innovación
+
+Mean Reversion Scanner - Oliver Kell EMA 10/20
+© Magensat 2026 · magensat.cl
+DESARROLLADO POR
+MAGENSAT
+Tecnología & Innovación
+
+Mean Reversion Scanner · Oliver Kell EMA 10/20
+© Magensat 2026 · magensat.cl
