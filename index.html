@@ -194,8 +194,8 @@ function getSorted(){
     const bOk = b.ai_analysis?.includes('ENTRAR') && !bIdeal;
     const aRiesgoso = a.ai_analysis && (a.ai_analysis.includes('CUIDADO')||a.ai_analysis.includes('EVITAR'));
     const bRiesgoso = b.ai_analysis && (b.ai_analysis.includes('CUIDADO')||b.ai_analysis.includes('EVITAR'));
-    const aRank = aIdeal?0:aOk?1:aRiesgoso?3:2;
-    const bRank = bIdeal?0:bOk?1:bRiesgoso?3:2;
+    const aRank = aIdeal?0:aOk?1:aRiesgoso?4:3;
+    const bRank = bIdeal?0:bOk?1:bRiesgoso?4:3;
     if(aRank!==bRank) return aRank-bRank;
     if(sort==='score')return b.score-a.score;
     if(sort==='dist')return Math.abs(b.dist10)-Math.abs(a.dist10);
