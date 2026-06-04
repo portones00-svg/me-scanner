@@ -59,7 +59,9 @@ module.exports = async (req, res) => {
       const earningsPenalty=c1<-8?-30:c1<-5?-15:0;
       const gradualDrop=(c5&&c5<-3&&c5>-15&&c1>-5)?15:0;
       const volBonus=rv<0.8?10:rv<1.2?5:0;
-      const score=Math.round(absDist*0.6+priceBonus+earningsPenalty+gradualDrop+volBonus+Math.max(0,50-(rsi||50))*0.3);
+      const PREMIUM=['AAPL','MSFT','NVDA','GOOGL','META','AMZN','TSLA','JPM','GS','MS','COST','WMT','HD','AVGO','AMD','AMAT','KLAC','LRCX','V','MA','UNH','LLY','ABBV','CRM','ADBE','INTU','NFLX','COIN','MELI','CRWD'];
+      const premiumBonus = PREMIUM.includes(ticker) ? 15 : 0;
+      const score=Math.round(absDist*0.6+priceBonus+earningsPenalty+gradualDrop+volBonus+Math.max(0,50-(rsi||50))*0.3+premiumBonus);
       const razon_baja=c1<-6||(c5&&c5<-15)?'malos_earnings':'toma_ganancias';
       const marketcap=cur<5?'micro':cur<20?'small':'large';
       return {ticker,name:result.meta?.shortName||ticker,sector:label,price:Math.round(cur*100)/100,ema10:Math.round(e10*100)/100,ema20:Math.round(e20*100)/100,dist10:d10,dist20:d20,rsi,rel_vol:rv,change1d:c1,change5d:c5,score,marketcap,razon_baja,ai_analysis:null};
