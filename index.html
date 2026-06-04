@@ -75,15 +75,11 @@ body{background:#f8fafc;font-family:'DM Sans',system-ui,sans-serif;max-width:480
           <button class="pill" id="sec-pharma" onclick="setSector('pharma')">Pharma</button>
           <button class="pill" id="sec-small" onclick="setSector('small')">Small Cap</button>
           <button class="pill" id="sec-etfs" onclick="setSector('etfs')">ETFs</button>
-          <button class="pill" id="sec-energy" onclick="setSector('energy')">Energy</button>
-          <button class="pill" id="sec-financials" onclick="setSector('financials')">Financials</button>
-          <button class="pill" id="sec-consumer" onclick="setSector('consumer')">Consumer</button>
+
           <button class="pill" id="sec-healthcare" onclick="setSector('healthcare')">Healthcare</button>
           <button class="pill" id="sec-realestate" onclick="setSector('realestate')">Real Estate</button>
           <button class="pill" id="sec-fullscan" onclick="setSector('fullscan')" style="background:linear-gradient(135deg,#1e3a5f,#2563eb);color:#fff;border-color:#2563eb;font-weight:700">🔥 FULL SCAN</button>
-          <button class="pill" id="sec-energy" onclick="setSector('energy')">Energy</button>
-          <button class="pill" id="sec-financials" onclick="setSector('financials')">Financials</button>
-          <button class="pill" id="sec-consumer" onclick="setSector('consumer')">Consumer</button>
+
         </div>
       </div>
       <div style="margin-bottom:14px">
@@ -94,6 +90,20 @@ body{background:#f8fafc;font-family:'DM Sans',system-ui,sans-serif;max-width:480
         <input type="range" min="1" max="20" value="2" id="distSlider" oninput="document.getElementById('distLabel').textContent=this.value+'%'" style="width:100%;accent-color:#1e3a5f">
       </div>
       <button class="btn-scan" id="scanBtn" onclick="runScan()">▶ ESCANEAR MERCADO</button>
+
+      <div style="display:flex;align-items:center;gap:10px;margin:16px 0">
+        <div style="flex:1;height:1px;background:#e2e8f0"></div>
+        <span style="font-size:11px;color:#94a3b8;letter-spacing:1px;font-family:'DM Mono',monospace">O BUSCA UNA ACCIÓN</span>
+        <div style="flex:1;height:1px;background:#e2e8f0"></div>
+      </div>
+      <div style="display:flex;gap:8px">
+        <input type="text" id="tickerInput" placeholder="Ej: AAPL, TSLA, NVDA..."
+          style="flex:1;border:1.5px solid #e2e8f0;border-radius:10px;padding:10px 14px;font-size:14px;font-family:DM Sans,sans-serif;outline:none;color:#0f172a"
+          onkeydown="if(event.key==='Enter')searchTicker()"
+          onfocus="this.style.borderColor='#2563eb'" onblur="this.style.borderColor='#e2e8f0'"
+        />
+        <button onclick="searchTicker()" style="background:linear-gradient(135deg,#1e3a5f,#2563eb);border:none;color:#fff;border-radius:10px;padding:10px 18px;font-size:13px;font-weight:700;cursor:pointer;white-space:nowrap">🔍 Buscar</button>
+      </div>
       <div id="progWrap" style="display:none;margin-top:12px">
         <div style="font-size:11px;color:#64748b;margin-bottom:6px" id="progTxt">Iniciando...</div>
         <div style="background:#e2e8f0;border-radius:4px;height:6px;overflow:hidden">
@@ -158,14 +168,16 @@ const dc=d=>{const a=Math.abs(d);return a>=15?'#dc2626':a>=8?'#d97706':'#6b7280'
 const sc=s=>s>=35?'#dc2626':s>=25?'#d97706':'#6b7280';
 function getRec(s){
   const m=s.marketcap==='micro'||s.price<5;
-  const e=s.razon_baja==='malos_earnings'||(s.ai_analysis&&(s.ai_analysis.toLowerCase().includes('earnings')||s.ai_analysis.toLowerCase().includes('guidance')||s.ai_analysis.toLowerCase().includes('capitulación fundamental')));
+  const e=s.razon_baja==='malos_earnings';
   if(m)return{tipo:'micro',icon:'⚡',titulo:'MICRO CAP — PRECAUCIÓN',color:'#7c3aed',bg:'#f5f3ff',border:'#a78bfa',accion:'Evaluar con cautela extrema',desc:'Baja liquidez, spreads amplios. Los institucionales NO participan. Máx 1-2% del portafolio.',puntos:['Spread bid/ask puede ser muy amplio','Los fondos grandes NO operan aquí','Stop loss ajustado y posición mínima','La EMA puede no tener validez estadística']};
   if(e)return{tipo:'earnings',icon:'🚫',titulo:'MALOS EARNINGS — NO ENTRAR',color:'#b91c1c',bg:'#fef2f2',border:'#fca5a5',accion:'Esperar y observar',desc:'Caída por malos resultados. Los institucionales salen. La regresión puede tardar meses.',puntos:['Institucionales NO regresan hasta próximo earnings positivo','Alta probabilidad de nuevos mínimos','Esperá 2-3 semanas tras el earnings','La EMA anterior pierde referencia como target']};
+  const setupIdeal = s.razon_baja==='toma_ganancias' && s.dist10 < -3 && s.rsi < 30 && s.rel_vol > 1.5 && s.ai_analysis && s.ai_analysis.includes('ENTRAR');
+  if(setupIdeal) return{tipo:'ideal',icon:'🎯',titulo:'SETUP IDEAL — ENTRAR AHORA',color:'#ffffff',bg:'linear-gradient(135deg,#1e3a5f,#2563eb)',border:'#2563eb',accion:'Entrar ahora',desc:'Todos los criterios alineados: caída técnica, RSI sobrevendido, volumen institucional y sin malos earnings.',puntos:['RSI bajo 30 — sobrevendido extremo','Volumen >1.5x confirma participación real','Sin noticias negativas fundamentales','Alta probabilidad de rebote a EMA 10/20']};
   return{tipo:'ingresar',icon:'✅',titulo:'TOMA DE GANANCIAS — SETUP VÁLIDO',color:'#15803d',bg:'#f0fdf4',border:'#86efac',accion:'Considerar entrada',desc:'Corrección técnica sin cambio en fundamentales. Institucionales tienen incentivo de recomprar.',puntos:['Buscá vela de reversión con volumen declinante','Stop Loss: 3-5% bajo el mínimo reciente','Confirmación: cierre por encima de la apertura','Esperá señal antes de entrar']};
 }
 function setSector(s){
   sector=s;
-  ['sp500','nasdaq','semis','pharma','small','etfs','energy','financials','consumer'].forEach(k=>document.getElementById('sec-'+k).className='pill'+(k===s?' on':''));
+  ['sp500','nasdaq','semis','pharma','small','etfs','energy','financials','consumer','healthcare','realestate','fullscan'].forEach(k=>document.getElementById('sec-'+k).className='pill'+(k===s?' on':''));
 }
 function sortBy(k){
   sort=k;
@@ -174,6 +186,10 @@ function sortBy(k){
 }
 function getSorted(){
   return[...results].sort((a,b)=>{
+    const aIdeal = a.razon_baja==='toma_ganancias' && a.dist10<-3 && a.rsi<30 && a.rel_vol>1.5 && a.ai_analysis?.includes('ENTRAR');
+    const bIdeal = b.razon_baja==='toma_ganancias' && b.dist10<-3 && b.rsi<30 && b.rel_vol>1.5 && b.ai_analysis?.includes('ENTRAR');
+    if(aIdeal && !bIdeal) return -1;
+    if(!aIdeal && bIdeal) return 1;
     if(sort==='score')return b.score-a.score;
     if(sort==='dist')return Math.abs(b.dist10)-Math.abs(a.dist10);
     if(sort==='rsi')return a.rsi-b.rsi;
