@@ -134,7 +134,7 @@ Una frase que resuma si vale la pena o no.`}]
   results.sort((a,b)=>b.score-a.score);
   const top = results.slice(0,40);
   if (ANTHROPIC_API_KEY) {
-    for (let i=0; i<Math.min(5,top.length); i++) {
+    for (let i=0; i<Math.min(15,top.length); i++) {
       top[i].ai_analysis = await aiAnalyze(top[i]);
     }
   }
