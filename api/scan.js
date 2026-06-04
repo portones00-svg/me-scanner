@@ -11,9 +11,14 @@ module.exports = async (req, res) => {
     semis: ["NVDA","AMD","INTC","QCOM","AVGO","TXN","AMAT","KLAC","LRCX","MRVL","ON","SWKS","MPWR","WOLF","ACLS","FORM","AMBA","SLAB","DIOD","SITM","AEHR","POWI","LSCC","ONTO","FSLR","ENPH","SEDG","SPWR","BRKS","CAMT","ENTG","KLIC"],
     pharma: ["PFE","MRK","ABBV","LLY","BMY","AMGN","GILD","BIIB","REGN","VRTX","MRNA","BNTX","INCY","BMRN","ALNY","IONS","SRPT","ARWR","BEAM","CRSP","EXEL","JAZZ","ITCI","ACAD","HALO","ARCT","APLS","TGTX","AGIO","IMVT","RCKT","NBIX","INSM","SAGE","RXRX"],
     small: ["SMCI","IONQ","RKLB","ACHR","JOBY","LUNR","ASTS","SPCE","NKLA","MULN","SNDL","TLRY","CGC","ACB","CRON","VALE","CLOV","AMC","GME","BB","NOK","BNGO","MVIS","CLSK","RIOT","MARA","BTBT","HUT","IREN","MIGI","BITF","LCID","RIVN"],
-    etfs: ["XLK","XLF","XLV","XLE","XLI","XLY","XLP","XLB","XLU","XLRE","QQQ","SPY","IWM","DIA","VTI","VGT","ARKK","ARKG","SOXL","TQQQ","GDX","GDXJ","GLD","SLV","TAN","ICLN"]
+    etfs: ["XLK","XLF","XLV","XLE","XLI","XLY","XLP","XLB","XLU","XLRE","QQQ","SPY","IWM","DIA","VTI","VGT","ARKK","ARKG","SOXL","TQQQ","GDX","GDXJ","GLD","SLV","TAN","ICLN"],
+    energy: ["XOM","CVX","COP","EOG","SLB","MPC","VLO","PSX","OXY","DVN","HAL","BKR","FANG","APA","MRO","HES","WMB","OKE","KMI","ET","EPD","TRGP","MPC","PXD"],
+    financials: ["JPM","BAC","WFC","GS","MS","C","BLK","SCHW","AXP","USB","PNC","TFC","COF","MCO","SPGI","CME","ICE","CB","AIG","MET","PRU","AFL","ALL","PGR","TRV"],
+    consumer: ["AMZN","TSLA","HD","MCD","NKE","SBUX","TGT","LOW","TJX","COST","WMT","DG","DLTR","ROST","BBY","ETSY","DKNG","MGM","LVS","MAR","HLT","YUM","CMG"],
+    healthcare: ["UNH","JNJ","LLY","ABT","MRK","TMO","DHR","SYK","ISRG","EW","BSX","BDX","ZBH","RMD","ALGN","HCA","CNC","MOH","HUM","CI"],
+    realestate: ["AMT","PLD","EQIX","CCI","PSA","EQR","AVB","VTR","WELL","O","SPG","ARE","BXP","KIM","REG","FRT","UDR","CPT","ESS","NNN"]
   };
-  const LABELS = {sp500:"S&P 500",nasdaq:"Nasdaq 100",semis:"Semiconductores",pharma:"Farmacéuticas",small:"Small/Mid Cap",etfs:"ETFs"};
+  const LABELS = {sp500:"S&P 500",nasdaq:"Nasdaq 100",semis:"Semiconductores",pharma:"Farmacéuticas",small:"Small/Mid Cap",etfs:"ETFs",energy:"Energía",financials:"Financieras",consumer:"Consumo",healthcare:"Healthcare",realestate:"Real Estate"};
   const allTickers = [...new Set(Object.values(SECTORS).flat())];
   const tickers = sector === 'fullscan' ? allTickers : (SECTORS[sector] || SECTORS.sp500);
   const label = LABELS[sector] || "S&P 500";
