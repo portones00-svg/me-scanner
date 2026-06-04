@@ -190,8 +190,13 @@ function getSorted(){
   return[...results].sort((a,b)=>{
     const aIdeal = a.razon_baja==='toma_ganancias' && a.dist10<-3 && a.rsi<30 && a.rel_vol>1.5 && a.ai_analysis?.includes('ENTRAR');
     const bIdeal = b.razon_baja==='toma_ganancias' && b.dist10<-3 && b.rsi<30 && b.rel_vol>1.5 && b.ai_analysis?.includes('ENTRAR');
-    if(aIdeal && !bIdeal) return -1;
-    if(!aIdeal && bIdeal) return 1;
+    const aOk = a.ai_analysis?.includes('ENTRAR') && !aIdeal;
+    const bOk = b.ai_analysis?.includes('ENTRAR') && !bIdeal;
+    const aRiesgoso = a.ai_analysis && (a.ai_analysis.includes('CUIDADO')||a.ai_analysis.includes('EVITAR'));
+    const bRiesgoso = b.ai_analysis && (b.ai_analysis.includes('CUIDADO')||b.ai_analysis.includes('EVITAR'));
+    const aRank = aIdeal?0:aOk?1:aRiesgoso?3:2;
+    const bRank = bIdeal?0:bOk?1:bRiesgoso?3:2;
+    if(aRank!==bRank) return aRank-bRank;
     if(sort==='score')return b.score-a.score;
     if(sort==='dist')return Math.abs(b.dist10)-Math.abs(a.dist10);
     if(sort==='rsi')return a.rsi-b.rsi;
