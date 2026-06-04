@@ -14,7 +14,8 @@ module.exports = async (req, res) => {
     etfs: ["XLK","XLF","XLV","XLE","XLI","XLY","XLP","XLB","XLU","XLRE","QQQ","SPY","IWM","DIA","VTI","VGT","ARKK","ARKG","SOXL","TQQQ","GDX","GDXJ","GLD","SLV","TAN","ICLN"]
   };
   const LABELS = {sp500:"S&P 500",nasdaq:"Nasdaq 100",semis:"Semiconductores",pharma:"Farmacéuticas",small:"Small/Mid Cap",etfs:"ETFs"};
-  const tickers = SECTORS[sector] || SECTORS.sp500;
+  const allTickers = [...new Set(Object.values(SECTORS).flat())];
+  const tickers = sector === 'fullscan' ? allTickers : (SECTORS[sector] || SECTORS.sp500);
   const label = LABELS[sector] || "S&P 500";
   function calcEMA(prices, period) {
     if (prices.length < period) return null;
