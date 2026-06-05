@@ -4,7 +4,7 @@ module.exports = async (req, res) => {
   const tickerSearch = req.query.ticker;
   if(tickerSearch){
     const t = tickerSearch.toUpperCase();
-    const result = await fetchTicker(t);
+    const result = await fetchTicker(t, true);
     if(!result) return res.json({ok:true,found:0,data:[]});
     if(ANTHROPIC_API_KEY) result.ai_analysis = await aiAnalyze(result);
     return res.json({ok:true,found:1,data:[result]});
@@ -46,7 +46,7 @@ module.exports = async (req, res) => {
     if (losses===0) return 100;
     return Math.round((100-100/(1+gains/losses))*10)/10;
   }
-  async function fetchTicker(ticker) {
+  async function fetchTicker(ticker, force=false) {
     try {
       const r = await fetch(`https://query1.finance.yahoo.com/v8/finance/chart/${ticker}?interval=1d&range=3mo`,{headers:{'User-Agent':'Mozilla/5.0'}});
       if (!r.ok) return null;
@@ -62,7 +62,7 @@ module.exports = async (req, res) => {
       if (!e10||!e20) return null;
       const d10=Math.round((cur-e10)/e10*10000)/100;
       const d20=Math.round((cur-e20)/e20*10000)/100;
-      if (d10>=0) return null;
+      if (d10>=0 && !force) return null;
       const avgVol=volumes.slice(-21,-1).reduce((a,b)=>a+b,0)/20;
       const rv=Math.round(volumes[volumes.length-1]/avgVol*100)/100;
       const c1=Math.round((cur-prv)/prv*10000)/100;
