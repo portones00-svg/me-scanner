@@ -1,6 +1,14 @@
 module.exports = async (req, res) => {
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Content-Type', 'application/json');
+  const tickerSearch = req.query.ticker;
+  if(tickerSearch){
+    const t = tickerSearch.toUpperCase();
+    const result = await fetchTicker(t);
+    if(!result) return res.json({ok:true,found:0,data:[]});
+    if(ANTHROPIC_API_KEY) result.ai_analysis = await aiAnalyze(result);
+    return res.json({ok:true,found:1,data:[result]});
+  }
   const sector = req.query.sector || 'sp500';
   const minDist = parseFloat(req.query.min_dist || '2');
   const ANTHROPIC_API_KEY = process.env.ANTHROPIC_API_KEY;
